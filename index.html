@@ -4,25 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Counselor</title>
-<style>body{font-family:sans-serif;padding:16px}#st{color:#666;font-size:14px}</style>
 </head>
 <body>
   <h1>AI Counselor</h1>
-  <p id="st">Memuat widget...</p>
-  <elevenlabs-convai id="w" agent-id="ISI_AGENT_ID"></elevenlabs-convai>
+  <elevenlabs-convai agent-id="ISI_AGENT_ID"></elevenlabs-convai>
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async></script>
-  <script>
-    setTimeout(function () {
-      var st = document.getElementById("st");
-      var id = document.getElementById("w").getAttribute("agent-id");
-      if (!id || id.indexOf("agent_") !== 0) {
-        st.textContent = "Agent ID kosong atau salah. Cek variabel ELEVENLABS_AGENT_ID di Railway.";
-      } else if (!customElements.get("elevenlabs-convai")) {
-        st.textContent = "Script widget gagal dimuat. Matikan Brave Shields atau coba Chrome.";
-      } else {
-        st.textContent = "Widget siap. Kalau tombol belum muncul, cek agent sudah Publish dan authentication mati.";
-      }
-    }, 3500);
-  </script>
 </body>
 </html>
