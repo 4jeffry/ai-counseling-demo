@@ -1,42 +1,59 @@
 import os
-import requests
+import base64
+import httpx
 from app.prompts.counseling import COUNSELING_SYSTEM_PROMPT
+
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
+
+
+class AIError(Exception):
+    pass
+
 
 class AIService:
     def __init__(self):
         self.api_key = os.getenv("AI_API_KEY", "").strip()
+        self.client = httpx.AsyncClient(timeout=45)
 
     async def generate_response(self, messages: list) -> str:
         if not self.api_key:
-            return "ERROR: Kunci AI_API_KEY belum terpasang di Railway."
+            raise AIError("AI_API_KEY belum terpasang")
+
+        contents = []
+        for msg in messages:
+            role = "user" if msg["role"] == "user" else "model"
+            if msg.get("audio_bytes"):
+                b64 = base64.b64encode(msg["audio_bytes"]).decode()
+                parts = [
+                    {"inlineData": {"mimeType": "audio/ogg", "data": b64}},
+                    {"text": "Dengarkan pesan suara ini dan balas sebagai konselor."},
+                ]
+            else:
+                parts = [{"text": msg.get("content") or "-"}]
+            contents.append({"role": role, "parts": parts})
+
+        payload = {
+            "system_instruction": {"parts": [{"text": COUNSELING_SYSTEM_PROMPT}]},
+            "contents": contents,
+        }
 
         try:
-            # Menggunakan Gemini 3.8 Flash sesuai dokumentasi API terbaru
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.api_key}"
-            
-            contents = []
-            for msg in messages:
-                role = "user" if msg.get("role") == "user" else "model"
-                contents.append({
-                    "role": role,
-                    "parts": [{"text": msg.get("content", "")}]
-                })
+            r = await self.client.post(
+                URL, json=payload, headers={"x-goog-api-key": self.api_key}
+            )
+        except httpx.HTTPError as e:
+            print(f"[GEMINI] {type(e).__name__}", flush=True)
+            raise AIError("koneksi ke Gemini gagal atau timeout")
 
-            payload = {
-                "system_instruction": {
-                    "parts": [{"text": COUNSELING_SYSTEM_PROMPT}]
-                },
-                "contents": contents
-            }
+        if r.status_code != 200:
+            print(f"[GEMINI] {r.status_code} {r.text[:500]}", flush=True)
+            raise AIError(f"Gemini error {r.status_code}")
 
-            response = requests.post(url, json=payload, timeout=15)
-            if response.status_code == 200:
-                data = response.json()
-                return data['candidates'][0]['content']['parts'][0]['text']
-            else:
-                print(f"[GEMINI ERROR] {response.text}", flush=True)
-                return f"Gemini Error {response.status_code}: Model API salah atau limit habis."
-        except Exception as e:
-            return f"Koneksi ke Gemini gagal: {str(e)}"
+        try:
+            return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError):
+            raise AIError("respons Gemini kosong atau diblokir")
+
 
 ai_service = AIService()
