@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Counseling Demo</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.1.0/dist/index.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen" class="card">
+            <h1>AI Counseling</h1>
+            <p>Ruang aman untuk berkonsultasi dan bercerita.</p>
+            
+            <div class="form-group">
+                <label>Pilih Mode Pengalaman:</label>
+                <div class="mode-options">
+                    <button class="btn mode-btn active" data-mode="efficient">
+                        <strong>Efficient</strong><br>
+                        <small>Standard Voice + Browser TTS</small>
+                    </button>
+                    <button class="btn mode-btn" data-mode="premium">
+                        <strong>Premium</strong><br>
+                        <small>Continuous Voice Call + ElevenLabs TTS</small>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Pilih Avatar:</label>
+                <select id="avatar-select" class="input">
+                    <option value="avatar1">Counselor Alex (2D)</option>
+                    <option value="avatar2">Counselor Maya (2D)</option>
+                </select>
+            </div>
+
+            <button id="start-btn" class="btn primary-btn">Mulai Sesi Konseling</button>
+        </div>
+
+        <!-- Session Screen -->
+        <div id="session-screen" class="card hidden">
+            <div class="header">
+                <span id="session-status-tag" class="tag">● Sesi Aktif</span>
+                <span id="mode-tag" class="tag mode-tag">Mode: Efficient</span>
+            </div>
+
+            <!-- Avatar Container -->
+            <div class="avatar-container">
+                <div id="avatar-display" class="avatar idle">
+                    <div class="avatar-face">👤</div>
+                </div>
+                <p id="avatar-state-text">State: IDLE</p>
+            </div>
+
+            <!-- Chat History -->
+            <div id="chat-history" class="chat-box"></div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <div id="efficient-controls" class="control-group">
+                    <button id="hold-speak-btn" class="btn icon-btn">🎤 Tahan untuk Bicara</button>
+                </div>
+
+                <div id="premium-controls" class="control-group hidden">
+                    <button id="toggle-call-btn" class="btn call-btn">📞 Start Voice Call</button>
+                </div>
+
+                <div class="text-input-group">
+                    <input type="text" id="message-input" placeholder="Tulis pesan Anda di sini..." />
+                    <button id="send-btn" class="btn">Kirim</button>
+                </div>
+
+                <button id="end-session-btn" class="btn danger-btn">Akhiri Sesi</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
