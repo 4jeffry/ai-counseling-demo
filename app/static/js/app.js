@@ -22,22 +22,8 @@ modeButtons.forEach(btn => {
     });
 });
 
-// --- URL GAMBAR AVATAR 2D ---
-// Gambar karakter diam (IDLE)
-const AVATAR_IDLE = "https://media.giphy.com/media/26FPCXdkvDbKBbgOI/200w_s.gif"; 
-// Gambar mulut bergerak (SPEAKING)
-const AVATAR_TALKING = "https://media.giphy.com/media/26FPCXdkvDbKBbgOI/giphy.gif"; 
-
 function setAvatarState(state) {
-    avatarDisplay.className = `avatar ${state.toLowerCase()}`;
     avatarStateText.innerText = `State: ${state.toUpperCase()}`;
-    
-    // Logika animasi pergantian gambar
-    if (state === "SPEAKING") {
-        avatarDisplay.style.backgroundImage = `url('${AVATAR_TALKING}')`;
-    } else {
-        avatarDisplay.style.backgroundImage = `url('${AVATAR_IDLE}')`;
-    }
 }
 
 function appendMessage(role, text) {
@@ -74,9 +60,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     };
 
     recognition.onend = () => {
-        if (!isCalling && avatarDisplay.classList.contains("listening")) {
-            setAvatarState("IDLE");
-        }
+        if (!isCalling) setAvatarState("IDLE");
     };
 }
 
@@ -151,10 +135,9 @@ function base64ToBlob(base64, mimeType) {
 }
 
 function handleSpeechOutput(text, audioBase64) {
-    // Ubah ke GIF mulut bergerak
-    setAvatarState("SPEAKING"); 
+    setAvatarState("SPEAKING");
 
-    if (currentMode === "premium" && audioBase64) {
+    if (audioBase64) {
         try {
             const blob = base64ToBlob(audioBase64, "audio/mpeg");
             const blobUrl = URL.createObjectURL(blob);
@@ -163,42 +146,25 @@ function handleSpeechOutput(text, audioBase64) {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    console.log("Audio diputar");
+                    console.log("Audio diputar mulus di Discord WebView");
                 }).catch(error => {
-                    console.log("Autoplay diblokir", error);
-                    fallbackBrowserTTS(text);
+                    console.log("Autoplay blocked", error);
+                    setAvatarState("IDLE");
                 });
             }
 
             audio.onended = () => {
                 URL.revokeObjectURL(blobUrl);
-                // Kembalikan ke gambar diam setelah selesai bicara
                 setAvatarState("IDLE");
                 if (isCalling && recognition) recognition.start();
             };
             audio.onerror = () => {
                 URL.revokeObjectURL(blobUrl);
-                fallbackBrowserTTS(text);
+                setAvatarState("IDLE");
             };
         } catch (e) {
-            fallbackBrowserTTS(text);
-        }
-    } else {
-        fallbackBrowserTTS(text);
-    }
-}
-
-function fallbackBrowserTTS(text) {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "id-ID";
-        utterance.onend = () => {
             setAvatarState("IDLE");
-            if (isCalling && recognition) recognition.start();
-        };
-        utterance.onerror = () => { setAvatarState("IDLE"); };
-        window.speechSynthesis.speak(utterance);
+        }
     } else {
         setAvatarState("IDLE");
     }
@@ -229,7 +195,6 @@ document.getElementById("start-btn").addEventListener("click", () => {
 document.getElementById("end-session-btn").addEventListener("click", () => {
     isCalling = false;
     if (recognition) recognition.stop();
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
     sessionScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
     chatHistory.innerHTML = "";
