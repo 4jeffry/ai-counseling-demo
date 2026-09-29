@@ -4,8 +4,8 @@ from app.prompts.counseling import COUNSELING_SYSTEM_PROMPT
 
 class AIService:
     def __init__(self):
-        self.demo_mode = os.getenv("DEMO_MODE", "true").lower() == "true"
-        self.api_key = os.getenv("AI_API_KEY", "")
+        self.demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
+        self.api_key = os.getenv("AI_API_KEY", "").strip()
 
     async def generate_response(self, messages: list) -> str:
         if self.demo_mode or not self.api_key:

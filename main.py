@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from app.services.ai_service import ai_service
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", os.getenv("EL", "")).strip()
 
 user_sessions = {}
