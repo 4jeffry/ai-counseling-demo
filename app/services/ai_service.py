@@ -4,15 +4,15 @@ from app.prompts.counseling import COUNSELING_SYSTEM_PROMPT
 
 class AIService:
     def __init__(self):
-        self.demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
         self.api_key = os.getenv("AI_API_KEY", "").strip()
 
     async def generate_response(self, messages: list) -> str:
-        if self.demo_mode or not self.api_key:
-            return self._get_mock_response(messages)
+        if not self.api_key:
+            return "ERROR: Kunci AI_API_KEY belum terpasang di Railway."
 
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.api_key}"
+            # Menggunakan Gemini 3.8 Flash sesuai dokumentasi API terbaru
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.api_key}"
             
             contents = []
             for msg in messages:
@@ -29,19 +29,14 @@ class AIService:
                 "contents": contents
             }
 
-            response = requests.post(url, json=payload, timeout=10)
+            response = requests.post(url, json=payload, timeout=15)
             if response.status_code == 200:
                 data = response.json()
                 return data['candidates'][0]['content']['parts'][0]['text']
             else:
-                return "Terima kasih sudah berbagi. Bisakah Anda menceritakan lebih lanjut?"
-        except Exception:
-            return self._get_mock_response(messages)
-
-    def _get_mock_response(self, messages: list) -> str:
-        last_message = messages[-1]["content"].lower() if messages else ""
-        if "cemas" in last_message or "stres" in last_message:
-            return "Saya memahami perasaan tersebut. Beban yang Anda rasakan pasti sangat berat. Apa hal utama yang paling memicu perasaan itu saat ini?"
-        return "Terima kasih sudah bercerita. Saya mendengarkan Anda. Bagaimana perasaan Anda setelah menyampaikan hal tersebut?"
+                print(f"[GEMINI ERROR] {response.text}", flush=True)
+                return f"Gemini Error {response.status_code}: Model API salah atau limit habis."
+        except Exception as e:
+            return f"Koneksi ke Gemini gagal: {str(e)}"
 
 ai_service = AIService()
