@@ -1,16 +1,13 @@
 import os
 import requests
 import tempfile
-import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from app.services.ai_service import ai_service
 
-# Ambil keys dari Railway
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", os.getenv("EL", "")).strip()
 
-# Dictionary untuk menyimpan riwayat chat per user
 user_sessions = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -23,28 +20,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
     chat_id = update.message.chat_id
     
-    # Inisialisasi sesi jika belum ada
     if chat_id not in user_sessions:
         user_sessions[chat_id] = []
         
     history = user_sessions[chat_id]
     history.append({"role": "user", "content": user_text})
     
-    # Kasih status "typing..." di Telegram
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
     
-    # 1. Panggil Gemini
+    # 1. Panggil Gemini via AI Service
     reply_text = await ai_service.generate_response(history)
     history.append({"role": "assistant", "content": reply_text})
     
-    # 2. Balas dengan Teks
+    # 2. Balas Teks
     await update.message.reply_text(reply_text)
     
-    # 3. Balas dengan Voice Note (ElevenLabs)
+    # 3. Balas Voice Note jika ElevenLabs Key tersedia
     if ELEVENLABS_API_KEY:
         await context.bot.send_chat_action(chat_id=chat_id, action='record_voice')
         try:
-            voice_id = "JBFqnCBsd6RMkjVDRZzb" # Voice gratis (George)
+            voice_id = "JBFqnCBsd6RMkjVDRZzb" # Premade voice gratis
             tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
             headers = {
                 "Accept": "audio/mpeg",
@@ -58,33 +53,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             res = requests.post(tts_url, json=body, headers=headers, timeout=15)
             if res.status_code == 200:
-                # Simpan audio sementara
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
                     f.write(res.content)
                     temp_path = f.name
                 
-                # Kirim sebagai Voice Note (bukan file mp3 biasa)
                 with open(temp_path, "rb") as audio:
                     await context.bot.send_voice(chat_id=chat_id, voice=audio)
                 
                 os.remove(temp_path)
             else:
-                print(f"[ELEVENLABS ERROR] {res.text}")
+                print(f"[ELEVENLABS ERROR] {res.status_code} - {res.text}", flush=True)
         except Exception as e:
-            print(f"[VOICE ERROR] {str(e)}")
+            print(f"[VOICE EXCEPTION] {str(e)}", flush=True)
 
 def main():
     if not TELEGRAM_TOKEN:
-        print("[FATAL] TELEGRAM_TOKEN tidak ditemukan!")
+        print("[FATAL] TELEGRAM_TOKEN tidak ditemukan di environment variable!", flush=True)
         return
 
-    print("Memulai Telegram Bot...")
+    print("Memulai Telegram Bot...", flush=True)
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Jalankan bot
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
