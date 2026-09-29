@@ -1,6 +1,7 @@
 import os
 import requests
 import tempfile
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from app.services.ai_service import ai_service
@@ -28,7 +29,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await context.bot.send_chat_action(chat_id=chat_id, action='typing')
     
-    # 1. Panggil Gemini via AI Service
+    # 1. Panggil Gemini
     reply_text = await ai_service.generate_response(history)
     history.append({"role": "assistant", "content": reply_text})
     
@@ -39,7 +40,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if ELEVENLABS_API_KEY:
         await context.bot.send_chat_action(chat_id=chat_id, action='record_voice')
         try:
-            voice_id = "JBFqnCBsd6RMkjVDRZzb" # Premade voice gratis
+            voice_id = "JBFqnCBsd6RMkjVDRZzb" # Premade voice gratis (George)
             tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
             headers = {
                 "Accept": "audio/mpeg",
