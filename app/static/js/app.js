@@ -3,7 +3,6 @@ let currentSessionId = "session_" + Math.random().toString(36).substring(2, 9);
 let isCalling = false;
 let recognition = null;
 
-// Element DOM
 const startScreen = document.getElementById("start-screen");
 const sessionScreen = document.getElementById("session-screen");
 const avatarDisplay = document.getElementById("avatar-display");
@@ -15,7 +14,6 @@ const sendBtn = document.getElementById("send-btn");
 const holdSpeakBtn = document.getElementById("hold-speak-btn");
 const toggleCallBtn = document.getElementById("toggle-call-btn");
 
-// Pilih Mode (Efficient / Premium)
 modeButtons.forEach(btn => {
     btn.addEventListener("click", () => {
         modeButtons.forEach(b => b.classList.remove("active"));
@@ -24,13 +22,24 @@ modeButtons.forEach(btn => {
     });
 });
 
-// Step 6: State Machine Avatar (IDLE, LISTENING, THINKING, SPEAKING)
+// --- URL GAMBAR AVATAR 2D ---
+// Gambar karakter diam (IDLE)
+const AVATAR_IDLE = "https://media.giphy.com/media/26FPCXdkvDbKBbgOI/200w_s.gif"; 
+// Gambar mulut bergerak (SPEAKING)
+const AVATAR_TALKING = "https://media.giphy.com/media/26FPCXdkvDbKBbgOI/giphy.gif"; 
+
 function setAvatarState(state) {
     avatarDisplay.className = `avatar ${state.toLowerCase()}`;
     avatarStateText.innerText = `State: ${state.toUpperCase()}`;
+    
+    // Logika animasi pergantian gambar
+    if (state === "SPEAKING") {
+        avatarDisplay.style.backgroundImage = `url('${AVATAR_TALKING}')`;
+    } else {
+        avatarDisplay.style.backgroundImage = `url('${AVATAR_IDLE}')`;
+    }
 }
 
-// Tambah Pesan ke Chat History
 function appendMessage(role, text) {
     const msgDiv = document.createElement("div");
     msgDiv.className = `msg ${role}`;
@@ -39,7 +48,6 @@ function appendMessage(role, text) {
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
-// Inisialisasi Speech Recognition (Step 5 - STT)
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -47,9 +55,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onstart = () => {
-        setAvatarState("LISTENING");
-    };
+    recognition.onstart = () => { setAvatarState("LISTENING"); };
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -74,25 +80,15 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     };
 }
 
-// Fitur Push-to-Talk (Efficient Mode)
 if (holdSpeakBtn) {
     holdSpeakBtn.addEventListener("click", () => {
-        if (recognition) {
-            recognition.start();
-        } else {
-            alert("Fitur perekaman suara tidak didukung di browser ini. Silakan gunakan input teks.");
-        }
+        if (recognition) recognition.start();
     });
 }
 
-// Fitur Continuous Voice Call (Premium Mode)
 if (toggleCallBtn) {
     toggleCallBtn.addEventListener("click", () => {
-        if (!recognition) {
-            alert("Fitur suara tidak didukung di browser ini.");
-            return;
-        }
-
+        if (!recognition) return;
         isCalling = !isCalling;
         if (isCalling) {
             toggleCallBtn.innerText = "🛑 End Voice Call";
@@ -107,7 +103,6 @@ if (toggleCallBtn) {
     });
 }
 
-// Kirim Pesan ke Backend API
 async function sendMessage(text) {
     if (!text.trim()) return;
 
@@ -140,24 +135,55 @@ async function sendMessage(text) {
     }
 }
 
-// Step 4: Handle Output Suara (TTS Browser / ElevenLabs)
-function handleSpeechOutput(text, audioBase64) {
-    setAvatarState("SPEAKING");
+function base64ToBlob(base64, mimeType) {
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+    }
+    return new Blob(byteArrays, { type: mimeType });
+}
 
-    // Jika Mode Premium & menerima Audio Base64 dari ElevenLabs
+function handleSpeechOutput(text, audioBase64) {
+    // Ubah ke GIF mulut bergerak
+    setAvatarState("SPEAKING"); 
+
     if (currentMode === "premium" && audioBase64) {
-        const audio = new Audio("data:audio/mp3;base64," + audioBase64);
-        audio.play();
-        audio.onended = () => {
-            setAvatarState("IDLE");
-            if (isCalling && recognition) recognition.start(); // Loop voice call
-        };
-        audio.onerror = () => {
-            // Fallback ke browser TTS jika audio ElevenLabs gagal diputar
+        try {
+            const blob = base64ToBlob(audioBase64, "audio/mpeg");
+            const blobUrl = URL.createObjectURL(blob);
+            const audio = new Audio(blobUrl);
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log("Audio diputar");
+                }).catch(error => {
+                    console.log("Autoplay diblokir", error);
+                    fallbackBrowserTTS(text);
+                });
+            }
+
+            audio.onended = () => {
+                URL.revokeObjectURL(blobUrl);
+                // Kembalikan ke gambar diam setelah selesai bicara
+                setAvatarState("IDLE");
+                if (isCalling && recognition) recognition.start();
+            };
+            audio.onerror = () => {
+                URL.revokeObjectURL(blobUrl);
+                fallbackBrowserTTS(text);
+            };
+        } catch (e) {
             fallbackBrowserTTS(text);
-        };
+        }
     } else {
-        // Mode Efficient menggunakan Browser Native TTS
         fallbackBrowserTTS(text);
     }
 }
@@ -171,22 +197,18 @@ function fallbackBrowserTTS(text) {
             setAvatarState("IDLE");
             if (isCalling && recognition) recognition.start();
         };
-        utterance.onerror = () => {
-            setAvatarState("IDLE");
-        };
+        utterance.onerror = () => { setAvatarState("IDLE"); };
         window.speechSynthesis.speak(utterance);
     } else {
         setAvatarState("IDLE");
     }
 }
 
-// Tombol Kirim Teks
 sendBtn.addEventListener("click", () => sendMessage(messageInput.value));
 messageInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendMessage(messageInput.value);
 });
 
-// Memulai Sesi
 document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
     sessionScreen.classList.remove("hidden");
@@ -204,7 +226,6 @@ document.getElementById("start-btn").addEventListener("click", () => {
     appendMessage("ai", "Halo! Saya di sini siap mendengarkan. Ada yang ingin Anda ceritakan hari ini?");
 });
 
-// Mengakhiri Sesi
 document.getElementById("end-session-btn").addEventListener("click", () => {
     isCalling = false;
     if (recognition) recognition.stop();
@@ -214,20 +235,15 @@ document.getElementById("end-session-btn").addEventListener("click", () => {
     chatHistory.innerHTML = "";
     setAvatarState("IDLE");
 });
-// Langkah 8: Inisialisasi Discord Embedded App SDK
+
 async function initDiscordSdk() {
     if (window.DiscordSDK) {
         try {
             const discordSdk = new window.DiscordSDK.DiscordSDK(
-                // Client ID akan dibaca jika dijalankan sebagai Discord Activity
-                window.location.search.get("client_id") || ""
+                new URLSearchParams(window.location.search).get("client_id") || ""
             );
             await discordSdk.ready();
-            console.log("Discord Activity SDK Ready!");
-        } catch (e) {
-            console.log("Dijalankan di luar Discord (Standalone Browser Mode)");
-        }
+        } catch (e) {}
     }
 }
-
 initDiscordSdk();

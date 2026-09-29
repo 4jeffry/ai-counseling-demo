@@ -114,3 +114,17 @@ label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #dcddde; 
 .text-input-group { display: flex; gap: 8px; margin-bottom: 10px; }
 .text-input-group input { flex: 1; padding: 10px; border-radius: 6px; border: none; background: #202225; color: white; }
 .text-input-group button { width: auto; }
+
+/* --- OVERRIDE AVATAR 2D --- */
+#avatar-display {
+    background-color: #2b2d31 !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+    border: 3px solid #6366f1 !important;
+}
+#avatar-display svg, 
+#avatar-display i,
+#avatar-display img {
+    display: none !important; 
+}
