@@ -5,8 +5,6 @@ let recognition = null;
 
 const startScreen = document.getElementById("start-screen");
 const sessionScreen = document.getElementById("session-screen");
-const avatarDisplay = document.getElementById("avatar-display");
-const avatarStateText = document.getElementById("avatar-state-text");
 const modeButtons = document.querySelectorAll(".mode-btn");
 const chatHistory = document.getElementById("chat-history");
 const messageInput = document.getElementById("message-input");
@@ -21,10 +19,6 @@ modeButtons.forEach(btn => {
         currentMode = btn.dataset.mode;
     });
 });
-
-function setAvatarState(state) {
-    avatarStateText.innerText = `State: ${state.toUpperCase()}`;
-}
 
 function appendMessage(role, text) {
     const msgDiv = document.createElement("div");
@@ -41,33 +35,18 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onstart = () => { setAvatarState("LISTENING"); };
-
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        if (transcript.trim()) {
-            sendMessage(transcript);
-        } else {
-            setAvatarState("IDLE");
-        }
+        if (transcript.trim()) sendMessage(transcript);
     };
 
     recognition.onerror = () => {
-        setAvatarState("IDLE");
-        if (isCalling) {
-            setTimeout(() => { if (isCalling) recognition.start(); }, 1000);
-        }
-    };
-
-    recognition.onend = () => {
-        if (!isCalling) setAvatarState("IDLE");
+        if (isCalling) setTimeout(() => { if (isCalling) recognition.start(); }, 1000);
     };
 }
 
 if (holdSpeakBtn) {
-    holdSpeakBtn.addEventListener("click", () => {
-        if (recognition) recognition.start();
-    });
+    holdSpeakBtn.addEventListener("click", () => { if (recognition) recognition.start(); });
 }
 
 if (toggleCallBtn) {
@@ -82,7 +61,6 @@ if (toggleCallBtn) {
             toggleCallBtn.innerText = "📞 Start Voice Call";
             toggleCallBtn.classList.remove("active");
             recognition.stop();
-            setAvatarState("IDLE");
         }
     });
 }
@@ -92,17 +70,12 @@ async function sendMessage(text) {
 
     appendMessage("user", text);
     messageInput.value = "";
-    setAvatarState("THINKING");
 
     try {
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                session_id: currentSessionId,
-                message: text,
-                mode: currentMode
-            })
+            body: JSON.stringify({ session_id: currentSessionId, message: text, mode: currentMode })
         });
 
         const data = await response.json();
@@ -111,11 +84,9 @@ async function sendMessage(text) {
             handleSpeechOutput(data.reply, data.audio_base64);
         } else {
             appendMessage("ai", "Maaf, terjadi kesalahan pada sistem.");
-            setAvatarState("IDLE");
         }
     } catch (err) {
         appendMessage("ai", "Gagal terhubung ke server.");
-        setAvatarState("IDLE");
     }
 }
 
@@ -128,15 +99,12 @@ function base64ToBlob(base64, mimeType) {
         for (let i = 0; i < slice.length; i++) {
             byteNumbers[i] = slice.charCodeAt(i);
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        byteArrays.push(byteArray);
+        byteArrays.push(new Uint8Array(byteNumbers));
     }
     return new Blob(byteArrays, { type: mimeType });
 }
 
 function handleSpeechOutput(text, audioBase64) {
-    setAvatarState("SPEAKING");
-
     if (audioBase64) {
         try {
             const blob = base64ToBlob(audioBase64, "audio/mpeg");
@@ -145,35 +113,37 @@ function handleSpeechOutput(text, audioBase64) {
 
             const playPromise = audio.play();
             if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    console.log("Audio diputar mulus di Discord WebView");
-                }).catch(error => {
-                    console.log("Autoplay blocked", error);
-                    setAvatarState("IDLE");
-                });
+                playPromise.catch(() => fallbackBrowserTTS(text));
             }
 
             audio.onended = () => {
                 URL.revokeObjectURL(blobUrl);
-                setAvatarState("IDLE");
                 if (isCalling && recognition) recognition.start();
             };
             audio.onerror = () => {
                 URL.revokeObjectURL(blobUrl);
-                setAvatarState("IDLE");
+                fallbackBrowserTTS(text);
             };
         } catch (e) {
-            setAvatarState("IDLE");
+            fallbackBrowserTTS(text);
         }
     } else {
-        setAvatarState("IDLE");
+        fallbackBrowserTTS(text);
+    }
+}
+
+function fallbackBrowserTTS(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "id-ID";
+        utterance.onend = () => { if (isCalling && recognition) recognition.start(); };
+        window.speechSynthesis.speak(utterance);
     }
 }
 
 sendBtn.addEventListener("click", () => sendMessage(messageInput.value));
-messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage(messageInput.value);
-});
+messageInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(messageInput.value); });
 
 document.getElementById("start-btn").addEventListener("click", () => {
     startScreen.classList.add("hidden");
@@ -188,25 +158,22 @@ document.getElementById("start-btn").addEventListener("click", () => {
         document.getElementById("premium-controls").classList.add("hidden");
     }
 
-    setAvatarState("IDLE");
     appendMessage("ai", "Halo! Saya di sini siap mendengarkan. Ada yang ingin Anda ceritakan hari ini?");
 });
 
 document.getElementById("end-session-btn").addEventListener("click", () => {
     isCalling = false;
     if (recognition) recognition.stop();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     sessionScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
     chatHistory.innerHTML = "";
-    setAvatarState("IDLE");
 });
 
 async function initDiscordSdk() {
     if (window.DiscordSDK) {
         try {
-            const discordSdk = new window.DiscordSDK.DiscordSDK(
-                new URLSearchParams(window.location.search).get("client_id") || ""
-            );
+            const discordSdk = new window.DiscordSDK.DiscordSDK(new URLSearchParams(window.location.search).get("client_id") || "");
             await discordSdk.ready();
         } catch (e) {}
     }

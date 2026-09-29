@@ -5,35 +5,15 @@ body { background-color: #1e1f22; color: #f2f3f5; display: flex; justify-content
 .hidden { display: none !important; }
 h1 { font-size: 1.4rem; text-align: center; margin-bottom: 8px; color: #5865f2; }
 p { text-align: center; font-size: 0.9rem; color: #b5bac1; margin-bottom: 16px; }
-
 .mode-selection { display: flex; gap: 8px; margin-bottom: 16px; }
 .mode-btn { flex: 1; padding: 10px; border: 1px solid #4e5058; background-color: #313338; color: #dbdee1; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
 .mode-btn.active { background-color: #5865f2; color: white; border-color: #5865f2; font-weight: bold; }
-
 .primary-btn { width: 100%; padding: 12px; background-color: #5865f2; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
 .danger-btn { background-color: #da373c; border: none; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+.session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; color: #b5bac1; border-bottom: 1px solid #383a40; padding-bottom: 10px; }
 
-.session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; color: #b5bac1; }
-
-/* AVATAR MANUSIA 2D */
-#avatar-display {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 8px auto;
-    border-radius: 50%;
-    border: 3px solid #5865f2;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: url('https://api.dicebear.com/7.x/bottts/svg?seed=Counselor2D');
-    transition: all 0.3s ease;
-}
-#avatar-display.speaking { border-color: #23a55a; transform: scale(1.05); }
-#avatar-display.listening { border-color: #f0b232; }
-
-#avatar-state-text { text-align: center; font-size: 0.8rem; color: #b5bac1; margin-bottom: 12px; }
-
-.chat-box { height: 220px; overflow-y: auto; background-color: #1e1f22; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+/* CHAT BOX DIPERBESAR KARENA AVATAR HILANG */
+.chat-box { height: 350px; overflow-y: auto; background-color: #1e1f22; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.3; }
 .msg.user { background-color: #5865f2; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
 .msg.ai { background-color: #383a40; color: #dbdee1; align-self: flex-start; border-bottom-left-radius: 2px; }
@@ -42,7 +22,6 @@ p { text-align: center; font-size: 0.9rem; color: #b5bac1; margin-bottom: 16px; 
 .secondary-btn { width: 100%; padding: 10px; background-color: #4e5058; border: none; border-radius: 8px; color: white; cursor: pointer; }
 .call-btn { width: 100%; padding: 10px; background-color: #23a55a; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
 .call-btn.active { background-color: #da373c; }
-
 .input-group { display: flex; gap: 8px; }
 .input-group input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #383a40; background-color: #1e1f22; color: white; font-size: 0.85rem; }
 .input-group button { width: auto; padding: 10px 16px; }
