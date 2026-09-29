@@ -19,9 +19,18 @@ http = httpx.AsyncClient(timeout=30)
 
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
+        try:
+            agent = os.getenv("ELEVENLABS_AGENT_ID", "").strip()
+            html = open(path, encoding="utf-8").read().replace("ISI_AGENT_ID", agent)
+        except OSError:
+            html = "Bot Telegram Aktif!"
+        body = html.encode("utf-8")
         self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(b"Bot Telegram Aktif!")
+        self.wfile.write(body)
 
     def log_message(self, format, *args):
         pass
