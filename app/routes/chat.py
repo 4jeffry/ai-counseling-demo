@@ -38,12 +38,13 @@ async def chat_endpoint(req: ChatRequest):
     audio_data = None
 
     if req.mode == "premium":
-        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY", "").strip()
+        elevenlabs_key = os.getenv("EL", os.getenv("ELEVENLABS_API_KEY", "")).strip()
         print(f"[ELEVENLABS] Key Exists: {bool(elevenlabs_key)}", flush=True)
 
         if elevenlabs_key:
             try:
-                voice_id = "21m00Tcm4TlvDq8ikWAM"
+                # Menggunakan Premade Voice ID yang GRATIS untuk akun Free (George)
+                voice_id = "JBFqnCBsd6RMkjVDRZzb"
                 tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
                 headers = {
                     "Accept": "audio/mpeg",
@@ -67,7 +68,7 @@ async def chat_endpoint(req: ChatRequest):
             except Exception as e:
                 print(f"[ELEVENLABS EXCEPTION] {str(e)}", flush=True)
         else:
-            print("[ELEVENLABS WARN] ELEVENLABS_API_KEY empty!", flush=True)
+            print("[ELEVENLABS WARN] Key empty!", flush=True)
 
     return ChatResponse(
         session_id=req.session_id,

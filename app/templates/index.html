@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Counseling Demo</title>
+    <title>AI Counseling</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <!-- Import Three.js & TalkingHead JS -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/talkinghead@1.2.0/dist/talkinghead.mjs" type="module"></script>
 </head>
 <body>
     <div id="app">
@@ -15,7 +12,7 @@
             <h1>AI Counseling</h1>
             <p>Pilih mode konseling untuk memulai:</p>
             <div class="mode-selection">
-                <button class="mode-btn active" data-mode="efficient">Mode Efficient (Web Audio)</button>
+                <button class="mode-btn active" data-mode="efficient">Mode Efficient</button>
                 <button class="mode-btn" data-mode="premium">Mode Premium (ElevenLabs)</button>
             </div>
             <button id="start-btn" class="primary-btn">Mulai Sesi Konseling</button>
@@ -27,10 +24,8 @@
                 <button id="end-session-btn" class="danger-btn">Akhiri Sesi</button>
             </div>
             
-            <div id="avatar-container" style="width: 100%; height: 220px; position: relative; margin: 10px 0;">
-                <div id="avatar-display" style="width: 100%; height: 100%;"></div>
-            </div>
-            <div id="avatar-state-text" style="text-align: center; font-weight: bold; margin-bottom: 10px;">State: IDLE</div>
+            <div id="avatar-display" class="avatar idle"></div>
+            <div id="avatar-state-text">State: IDLE</div>
 
             <div id="chat-history" class="chat-box"></div>
 
