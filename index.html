@@ -1,13 +1,105 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Counselor</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Counselor - ixiera.id</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* Mengambil warna tema dinamis langsung dari Telegram */
+    :root {
+      --bg-color: var(--tg-theme-bg-color, #0f172a);
+      --text-color: var(--tg-theme-text-color, #ffffff);
+      --hint-color: var(--tg-theme-hint-color, #94a3b8);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* Styling Header biar mirip UI Aplikasi */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .brand {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #38bdf8;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: var(--hint-color);
+      line-height: 1.5;
+    }
+
+    /* Kontainer Widget biar rapi di tengah */
+    .widget-container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    elevenlabs-convai {
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
-  <h1>AI Counselor</h1>
-  <elevenlabs-convai agent-id="ISI_AGENT_ID"></elevenlabs-convai>
+
+  <div class="header">
+    <span class="brand">ixiera.id</span>
+    <h1>AI Counselor</h1>
+    <p>Sesi konseling privat dan aman. Ketuk tombol di bawah untuk memulai obrolan langsung.</p>
+  </div>
+
+  <div class="widget-container">
+    <!-- Tag agent-id ini jangan diubah, direplace otomatis oleh Python -->
+    <elevenlabs-convai agent-id="ISI_AGENT_ID"></elevenlabs-convai>
+  </div>
+
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async></script>
+  <script>
+    // Memaksa Mini App langsung terbuka layar penuh (fullscreen)
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  </script>
 </body>
 </html>
